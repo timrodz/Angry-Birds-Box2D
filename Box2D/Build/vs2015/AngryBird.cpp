@@ -3,7 +3,7 @@
 
 AngryBirds::AngryBirds()
 {
-	m_world->SetGravity(b2Vec2(0.0f, -10.0f));
+	m_world->SetGravity(b2Vec2(0.0f, -30.0f));
 
 	//Create some ground so stuff doesn't fall of the screen.
 	b2Body* ground = NULL;
@@ -27,7 +27,6 @@ AngryBirds::AngryBirds()
 		shape.SetAsBox(4.0f, 0.5f, b2Vec2(4.0f, 0.0f), 0.5f * b2_pi);
 
 		b2FixtureDef fd;
-
 		//Uncollidable flag 
 		fd.filter.maskBits = 0x0000;
 
@@ -47,13 +46,12 @@ AngryBirds::AngryBirds()
 
 void AngryBirds::Step(Settings* settings)
 {
-
 	Test::Step(settings);
 
 	// We are going to destroy some bodies according to contact
 	// points. We must buffer the bodies that should be destroyed
 	// because they may belong to multiple contact points.
-	const int32 k_maxNuke = 20;
+	const int32 k_maxNuke = 10;
 	b2Body* nuke[k_maxNuke];
 	int32 nukeCount = 0;
 
@@ -66,16 +64,16 @@ void AngryBirds::Step(Settings* settings)
 		b2Body* body1 = point->fixtureA->GetBody();
 		b2Body* body2 = point->fixtureB->GetBody();
 
-		float32 mass1 = body1->GetMass();
-		float32 mass2 = body2->GetMass();
+		float32 mass1 = point->fixtureA->GetDensity();
+		float32 mass2 = point->fixtureB->GetDensity();
 
 		float32 velocity1 = body1->GetLinearVelocity().Length();
 		float32 velocity2 = body2->GetLinearVelocity().Length();
 
 		float32 velocity = velocity1 + velocity2;
 
-		if (velocity > 3.0f && abs(mass1 - mass2) >= 10)
-			if (mass1 > 0.0f && mass2 > 0.0f && (mass1 < 50.0f || mass2 < 50.0f))
+		if (velocity > 10.0f)
+			if (mass1 > 0.0f && mass2 > 0.0f)
 			{
 				if (mass2 > mass1)
 				{
@@ -108,6 +106,7 @@ void AngryBirds::Step(Settings* settings)
 
 		if (b != m_bomb)
 		{
+			bool projectile = false;
 			UserData* data = static_cast<UserData*>(b->GetUserData());
 			if (data != NULL)
 			{
@@ -117,15 +116,51 @@ void AngryBirds::Step(Settings* settings)
 				}
 				if (data->isPayload)
 				{
-					if(Birdsleft[0] > '0')
-						CreatePayload();
+					projectile = true;
+				}
+				if (data->isDestroyable)
+				{
+					int massss = b->GetMass();
+					int payloadmass;
+					if(m_Payload != NULL)
+						payloadmass = m_Payload->GetMass();
+					data->isEnemy = true;
 				}
 			}
 
-			m_world->DestroyBody(b);
+			if (!projectile)
+				m_world->DestroyBody(b);
 		}
 	}
 
+	if (m_Payload != NULL)
+	{
+		if (!m_Payload->IsAwake() && Fired)
+		{
+			m_world->DestroyBody(m_Payload);
+			m_Payload = NULL;
+			Birdsleft[0]--;
+		}
+		else
+		{
+			b2Vec2 pos = m_Payload->GetPosition();
+			if (pos.y < 0 || pos.x < -40 || pos.x > 40)
+			{
+				m_world->DestroyBody(m_Payload);
+				m_Payload = NULL;
+				Birdsleft[0]--;
+			}
+		}
+	}
+
+	if (m_Payload == NULL)
+	{
+		if (Birdsleft[0] > '0')
+		{
+			CreatePayload();
+		}
+	}
+	
 	std::string text = "Pigs left = ";
 	std::string ammo = "Birds left = ";
 	
@@ -141,6 +176,15 @@ void AngryBirds::Keyboard(int key)
 	case GLFW_KEY_B:
 		if (m_Payload == NULL)
 			CreatePayload();
+		break;
+	case GLFW_KEY_1:
+		m_BirdType = NORMAL;
+		break;
+	case GLFW_KEY_2:
+		m_BirdType = SPLIT;
+		break;
+	case GLFW_KEY_3:
+		m_BirdType = HEAVY;
 		break;
 	}
 }
@@ -169,8 +213,24 @@ void AngryBirds::MouseUp(const b2Vec2& p)
 		b2FixtureDef fd;
 		fd.shape = &shape;
 		fd.friction = 0.6f;
-		fd.density = 5.0f;
+		float density = 5.0f;
+		switch (m_BirdType)
+		{
+			case HEAVY:
+				density = 7.0f;
 
+				break;
+			case SPLIT:
+				density = 3.5f;
+
+				break;
+
+			case NORMAL:
+			default:
+				density = 5.0f;
+				break;
+		}
+		fd.density = density;
 		Payload->CreateFixture(&fd);
 
 		b2Vec2 force = m_joint->GetReactionForce(150.0f);
@@ -180,8 +240,10 @@ void AngryBirds::MouseUp(const b2Vec2& p)
 		m_world->DestroyBody(m_Payload);
 		m_Payload = NULL;
 		m_joint = NULL;
-		Birdsleft[0]--;
 
+		m_Payload = Payload;
+
+		Fired = true;
 	}
 
 	m_mouseFirstClick = b2Vec2(p);
@@ -241,12 +303,14 @@ void AngryBirds::CreatePayload()
 
 	m_joint = m_world->CreateJoint(&jd);
 	m_Payload->CreateFixture(&fd);
+	Fired = false;
 }
 
 void AngryBirds::CreateLevel()
 {
 	Birdsleft[0] = { '3' };
 	{
+		DestructibleData.isDestroyable = true;
 		//Create a body type and position
 		b2BodyDef bd;
 		bd.type = b2_dynamicBody;
@@ -260,29 +324,33 @@ void AngryBirds::CreateLevel()
 		b2FixtureDef fd;
 		fd.shape = &shape;
 		fd.friction = 0.6f;
-		fd.density = 5.0f;
+		fd.density = 7.0f;
 		
 		//Use the above templated to create multiple bodies in the world.
 		b2Body* body = m_world->CreateBody(&bd);
 		body->CreateFixture(&fd);
+		body->SetUserData(&DestructibleData);
 
 		bd.position.Set(5.0f, 4.0f);
 		body = m_world->CreateBody(&bd);
 		body->CreateFixture(&fd);
+		body->SetUserData(&DestructibleData);
 
 		bd.position.Set(0.0f, 12.0f);
 		body = m_world->CreateBody(&bd);
 		body->CreateFixture(&fd);
+		body->SetUserData(&DestructibleData);
 
 		shape.SetAsBox(0.5f, 4.0f, b2Vec2(4.0f, 0.0f), 0.5f * b2_pi);
 		bd.position.Set(0.0, 8.0f);
 		body = m_world->CreateBody(&bd);
 		body->CreateFixture(&fd);
+		body->SetUserData(&DestructibleData);
 
-		DestructibleData.isDestroyable = true;
 		bd.position.Set(0.0f, 20.0f);
 		body = m_world->CreateBody(&bd);
 		body->CreateFixture(&fd);
+		body->SetUserData(&DestructibleData);
 	}
 }
 
