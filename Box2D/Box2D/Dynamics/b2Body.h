@@ -40,7 +40,8 @@ enum b2BodyType
 {
 	b2_staticBody = 0,
 	b2_kinematicBody,
-	b2_dynamicBody
+	b2_dynamicBody,
+
 
 	// TODO_ERIN
 	//b2_bulletBody,

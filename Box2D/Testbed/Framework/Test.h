@@ -59,8 +59,19 @@ inline float32 RandomFloat(float32 lo, float32 hi)
 
 struct UserData
 {
-	bool isPayload;
+	UserData()
+	{
+		isPayload = false;
+		isEnemy = false;
+		isDraggable = false;
+		isDestroyable = false;
+	}
 
+	bool isPayload; //YELLOW true
+	bool isEnemy;   // RED true
+	bool isDraggable;
+	bool isDestroyable;  //CYAN true YELLOW False
+	
 };
 
 /// Test settings. Some can be controlled in the GUI.

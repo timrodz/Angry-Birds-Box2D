@@ -32,5 +32,6 @@
     <ClCompile Include="..\..\Testbed\Tests\TestEntries.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="AngryBird.cpp" />
   </ItemGroup>
 </Project>

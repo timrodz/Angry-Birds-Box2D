@@ -32,6 +32,7 @@
 #include "Box2D/Collision/b2TimeOfImpact.h"
 #include "Box2D/Common/b2Draw.h"
 #include "Box2D/Common/b2Timer.h"
+#include "Testbed\Tests\AngryBird.h"
 #include <new>
 
 b2World::b2World(const b2Vec2& gravity)
@@ -1150,6 +1151,7 @@ void b2World::DrawJoint(b2Joint* joint)
 	}
 }
 
+//DRAWING COMMENT
 void b2World::DrawDebugData()
 {
 	if (g_debugDraw == NULL)
@@ -1166,25 +1168,37 @@ void b2World::DrawDebugData()
 			const b2Transform& xf = b->GetTransform();
 			for (b2Fixture* f = b->GetFixtureList(); f; f = f->GetNext())
 			{
-				if (b->IsActive() == false)
+				UserData* Data = static_cast<UserData*>(b->GetUserData());
+
+				if (Data != NULL)
 				{
-					DrawShape(f, xf, b2Color(0.5f, 0.5f, 0.3f));
-				}
-				else if (b->GetType() == b2_staticBody)
-				{
-					DrawShape(f, xf, b2Color(0.5f, 0.9f, 0.5f));
-				}
-				else if (b->GetType() == b2_kinematicBody)
-				{
-					DrawShape(f, xf, b2Color(0.5f, 0.5f, 0.9f));
-				}
-				else if (b->IsAwake() == false)
-				{
-					DrawShape(f, xf, b2Color(0.6f, 0.6f, 0.6f));
+					if (Data->isEnemy)
+							DrawShape(f, xf, b2Color(1.0f, 0.f, 0.f));
+					else if (Data->isPayload)
+							DrawShape(f, xf, b2Color(0.9568f, 0.88f, 0.2588f));
 				}
 				else
 				{
-					DrawShape(f, xf, b2Color(0.9f, 0.7f, 0.7f));
+					if (b->IsActive() == false)
+					{
+						DrawShape(f, xf, b2Color(0.5f, 0.5f, 0.3f));
+					}
+					else if (b->GetType() == b2_staticBody)
+					{
+						DrawShape(f, xf, b2Color(0.5f, 0.9f, 0.5f));
+					}
+					else if (b->GetType() == b2_kinematicBody)
+					{
+						DrawShape(f, xf, b2Color(0.5f, 0.5f, 0.9f));
+					}
+					else if (b->IsAwake() == false)
+					{
+						DrawShape(f, xf, b2Color(0.6f, 0.6f, 0.6f));
+					}
+					else
+					{
+						DrawShape(f, xf, b2Color(0.9f, 0.7f, 0.7f));
+					}
 				}
 			}
 		}

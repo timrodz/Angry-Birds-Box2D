@@ -361,6 +361,7 @@ static bool sTestEntriesGetName(void*, int idx, const char** out_name)
 static void sInterface()
 {
 	int menuWidth = 200;
+	ui.showMenu = false;
 	if (ui.showMenu)
 	{
 		ImGui::SetNextWindowPos(ImVec2((float)g_camera.m_width - menuWidth - 10, 10));
