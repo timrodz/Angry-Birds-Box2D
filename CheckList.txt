@@ -1,0 +1,55 @@
+
+1.1 - 70% A
+	^ - Utilise Box2D Middleware
+	^ - 2D game world created including
+	  gravity, forces, rigidbodies and various element created with different joints
+	^ - Newtonian physics utilised
+	^ - all gameplay as specified in the brief is feature complete.
+
+1.2 - 10% A
+	X - Code is commented well and easy to follow
+	^ - Solution builds cleanly under warning level 3 in all build targets.
+	X - File structure of the solution matches the requirements exactly.
+	X - No intermediate files
+	X - Source code follows coding standard
+	^ - No bugs present, game does not crash. No Memory leaks
+	X - Only files required to run the game are present (Including documentation)
+
+
+1.3 - 20% Post Mortem
+
+	- All known issues are outlined, and described; possible resoultions detailed.
+	- Problem solving strategies are outlined and clearly described.
+	- Collision detection strategies are outlined clearly described and evaluated.
+	- Verification and validation strategies are clearly outlined and described.
+
+
+FEATURE LIST
+*************
+X - Incomplete
+^ - Completed
+
+^ - Setup Atleast 2 scenes of Items to knock over
+	^ - Level 1 - A simple scene with some destructible and indestructible planks and enemies
+	^ - Level 2 - A more advanced scene with a piston motor acting on a prism joint and multiple revoulte joints.
+^ - Utilise 3 types of Joints
+	^ - Player Slingshot ( b2DistanceJointDef)
+	^ - Level 2 Piston prism joint
+	^ - Level 2 Multiple revolute joints
+^ - Allow atleast 3 types of projectile  - Use the Keys 1, 2 and 3 to select Normal, Light and Heavy.
+	^ - Normal - Yellow - Standard density and mass. Average projectile movement. Capable of knocking things over and destroying enemy entities. 
+	^ - Heavy  - Black  - Heavier density and mass, slower projectile movement. Capable of destroying denser bodies and indestructible bodies (Feature)
+	^ - Light  - Blue   - Light density and mass, faster projectile movement. Follows a straighter line, increasing accuracy and distance (Feature)
+
+
+^ - Destructible items with physics behaviour - Color CYAN
+^ - Indestructible items with physics behavior - Color PURPLE - Can be destroyed by HEAVY type AngryBird (On purpose)
+^ - Enemy Entities - Color RED
+^ - Indestructible Ground - Color GREEN (b2_StaticBody default)
+^ - Fling-able player entities - Color (Yellow, Blue, Black) according to type.
+
+^ - Gravity (-25.0f)
+^ - Forces (Slingshot and collisions)
+^ - Rigidbody (All dynamic entities)
+
+

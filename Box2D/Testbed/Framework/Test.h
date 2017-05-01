@@ -65,12 +65,15 @@ struct UserData
 		isEnemy = false;
 		isDraggable = false;
 		isDestroyable = false;
+		Color = b2Color(0.0f, 0.0f, 0.0f);
 	}
 
 	bool isPayload; //YELLOW true
 	bool isEnemy;   // RED true
 	bool isDraggable;
 	bool isDestroyable;  //CYAN true YELLOW False
+
+	b2Color Color;
 	
 };
 

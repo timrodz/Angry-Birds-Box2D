@@ -1,19 +1,44 @@
 #include "Testbed\Tests\AngryBird.h"
 #include <string>
 
+int AngryBirds::Level = 0;
+
 AngryBirds::AngryBirds()
 {
+	Begin();
+}
+
+
+void AngryBirds::Begin()
+{
+	for (b2Body* b = m_world->GetBodyList(); b; /*b = b->GetNext()*/)
+	{
+		b2Body* next = b->GetNext();  // remember next body before *b gets destroyed
+		m_world->DestroyBody(b); // do I need to destroy fixture as well(and how?) or it does that for me?
+		b = next;  // go to next body
+	}
+	EnemyCount[0] = { '2' };
+	Birdsleft[0] = { '3' };
+
 	m_world->SetGravity(b2Vec2(0.0f, -30.0f));
+	DestructibleData.isDestroyable = true;
+	DestructibleData.Color = b2Color(0.25f, 0.9f, 0.9f);
+	IndestructibleData.isDestroyable = false;
+	IndestructibleData.Color = b2Color(1.0f, 0.0f, 1.0f);
+	EnemyData.isEnemy = true;
+	EnemyData.Color = b2Color(1.0f, 0.0f, 0.0f);
+	PayloadData.isPayload = true;
+	PayloadData.Color = b2Color(1, 1, 0);
 
 	//Create some ground so stuff doesn't fall of the screen.
-	b2Body* ground = NULL;
+	m_groundBody = NULL;
 	{
 		b2BodyDef bd;
-		ground = m_world->CreateBody(&bd);
+		m_groundBody = m_world->CreateBody(&bd);
 
 		b2EdgeShape shape;
 		shape.Set(b2Vec2(-40.0f, 0.0f), b2Vec2(40.0f, 0.0f));
-		ground->CreateFixture(&shape, 0.0f);
+		m_groundBody->CreateFixture(&shape, 0.0f);
 	}
 
 	//Define the slingshot - as uncollidable
@@ -36,14 +61,21 @@ AngryBirds::AngryBirds()
 		m_Slingshot->CreateFixture(&fd);
 	}
 
-	CreateLevel();
+	switch (Level)
+	{
+	case 0:
+		CreateLevel1();
+		break;
+	case 1:
+		CreateLevel2();
+		break;
+
+	default:
+		CreateLevel2();
+		break;
+	}
 	CreatePayload();
-	CreateEnemies();
 }
-
-
-
-
 void AngryBirds::Step(Settings* settings)
 {
 	Test::Step(settings);
@@ -106,7 +138,7 @@ void AngryBirds::Step(Settings* settings)
 
 		if (b != m_bomb)
 		{
-			bool projectile = false;
+			bool ShouldNuke = true;
 			UserData* data = static_cast<UserData*>(b->GetUserData());
 			if (data != NULL)
 			{
@@ -114,24 +146,22 @@ void AngryBirds::Step(Settings* settings)
 				{
 					EnemyCount[0]--;
 				}
-				if (data->isPayload)
+				else if (data->isPayload)
 				{
-					projectile = true;
+					ShouldNuke = false;
 				}
-				if (data->isDestroyable)
+				else if (!data->isDestroyable)
 				{
-					int massss = b->GetMass();
-					int payloadmass;
-					if(m_Payload != NULL)
-						payloadmass = m_Payload->GetMass();
-					data->isEnemy = true;
+					ShouldNuke = false;
 				}
 			}
 
-			if (!projectile)
+			if (ShouldNuke)
 				m_world->DestroyBody(b);
 		}
 	}
+
+
 
 	if (m_Payload != NULL)
 	{
@@ -140,6 +170,17 @@ void AngryBirds::Step(Settings* settings)
 			m_world->DestroyBody(m_Payload);
 			m_Payload = NULL;
 			Birdsleft[0]--;
+		}
+		else if (m_Payload->IsAwake() && Fired)
+		{
+			DestroyTimer += 1.0f / 60.0f;
+			if (DestroyTimer > 6.0f)
+			{
+				DestroyTimer = 0.0f;
+				m_world->DestroyBody(m_Payload);
+				m_Payload = NULL;
+				Birdsleft[0]--;
+			}
 		}
 		else
 		{
@@ -160,6 +201,23 @@ void AngryBirds::Step(Settings* settings)
 			CreatePayload();
 		}
 	}
+
+	if (Birdsleft[0] <= '0')
+	{
+		Birdsleft[0] = { '3' };
+		Begin();
+	}
+	else if (EnemyCount[0] <= '0')
+	{
+		EnemyCount[0] = { '2' };
+
+		if (Level < 2)
+			Level++;
+		else
+			Level = 0;
+		Begin();
+	}
+	
 	
 	std::string text = "Pigs left = ";
 	std::string ammo = "Birds left = ";
@@ -179,17 +237,26 @@ void AngryBirds::Keyboard(int key)
 		break;
 	case GLFW_KEY_1:
 		m_BirdType = NORMAL;
+		PayloadData.Color = b2Color(1.0f, 1.0f, 0.f);
 		break;
 	case GLFW_KEY_2:
 		m_BirdType = SPLIT;
+		PayloadData.Color = b2Color(0.2f, 0.2f, 1.0f);
 		break;
 	case GLFW_KEY_3:
 		m_BirdType = HEAVY;
+		PayloadData.Color = b2Color(0.f, 0.f, 0.f);
 		break;
 	}
 }
 
-
+/*
+@ Function: MouseUp 
+@ Author: Cameron Peet 
+@ Param : vector2 cointaining mouse coordinate on release of mouse button
+@ desc : Player releases the payload so destroy this one to remove the JointDef between the payload and the slingshot, and apply the tension force
+		 to a new payload that doesn't have the joint attached to it. Disable dragging this payload and set its density according to the selected payload type.
+*/
 void AngryBirds::MouseUp(const b2Vec2& p)
 {
 	if (m_mouseJoint && m_joint)
@@ -205,6 +272,7 @@ void AngryBirds::MouseUp(const b2Vec2& p)
 		UserData* data = new UserData();
 		data->isPayload = true;
 		data->isDraggable = false;
+		data->Color = PayloadData.Color;
 		Payload->SetUserData(data);
 
 		b2PolygonShape shape;
@@ -213,18 +281,17 @@ void AngryBirds::MouseUp(const b2Vec2& p)
 		b2FixtureDef fd;
 		fd.shape = &shape;
 		fd.friction = 0.6f;
+		
 		float density = 5.0f;
 		switch (m_BirdType)
 		{
 			case HEAVY:
-				density = 7.0f;
-
+				fd.friction = 0.5f;
+				density = 14.0f;
 				break;
 			case SPLIT:
 				density = 3.5f;
-
 				break;
-
 			case NORMAL:
 			default:
 				density = 5.0f;
@@ -233,7 +300,12 @@ void AngryBirds::MouseUp(const b2Vec2& p)
 		fd.density = density;
 		Payload->CreateFixture(&fd);
 
-		b2Vec2 force = m_joint->GetReactionForce(150.0f);
+		b2Vec2 force;
+		if(m_BirdType == HEAVY)
+			force = m_joint->GetReactionForce(340.0f);
+		else
+			force = m_joint->GetReactionForce(150.0f);
+
 		Payload->ApplyForce(force, force, true);
 
 		m_world->DestroyJoint(m_joint);
@@ -249,7 +321,12 @@ void AngryBirds::MouseUp(const b2Vec2& p)
 	m_mouseFirstClick = b2Vec2(p);
 }
 
-
+/*
+@ Function: MouseMove
+@ Author: Cameron Peet
+@ Param : vector2 containing mouse coordinate for each frame
+@ desc :
+*/
 void AngryBirds::MouseMove(const b2Vec2& p)
 {
 	m_mouseWorld = p;
@@ -306,11 +383,11 @@ void AngryBirds::CreatePayload()
 	Fired = false;
 }
 
-void AngryBirds::CreateLevel()
+void AngryBirds::CreateLevel1()
 {
-	Birdsleft[0] = { '3' };
+
 	{
-		DestructibleData.isDestroyable = true;
+
 		//Create a body type and position
 		b2BodyDef bd;
 		bd.type = b2_dynamicBody;
@@ -329,12 +406,12 @@ void AngryBirds::CreateLevel()
 		//Use the above templated to create multiple bodies in the world.
 		b2Body* body = m_world->CreateBody(&bd);
 		body->CreateFixture(&fd);
-		body->SetUserData(&DestructibleData);
+		body->SetUserData(&IndestructibleData);
 
 		bd.position.Set(5.0f, 4.0f);
 		body = m_world->CreateBody(&bd);
 		body->CreateFixture(&fd);
-		body->SetUserData(&DestructibleData);
+		body->SetUserData(&IndestructibleData);
 
 		bd.position.Set(0.0f, 12.0f);
 		body = m_world->CreateBody(&bd);
@@ -352,28 +429,225 @@ void AngryBirds::CreateLevel()
 		body->CreateFixture(&fd);
 		body->SetUserData(&DestructibleData);
 	}
+	//Create enemies
+	{
+		b2BodyDef bd;
+		b2FixtureDef fd;
+		b2CircleShape shape;
+
+		bd.type = b2_dynamicBody;
+		shape.m_radius = 1;
+		fd.shape = &shape;
+		fd.friction = 0.6f;
+		fd.density = 1.0f;
+
+		bd.position.Set(0, 4.0f);
+		m_EnemyPigs[0] = m_world->CreateBody(&bd);
+		m_EnemyPigs[0]->CreateFixture(&fd);
+		m_EnemyPigs[0]->SetUserData(&EnemyData);
+
+		bd.position.Set(6.0f, 12.0f);
+		m_EnemyPigs[1] = m_world->CreateBody(&bd);
+		m_EnemyPigs[1]->CreateFixture(&fd);
+		m_EnemyPigs[1]->SetUserData(&EnemyData);
+	}
 }
 
 void AngryBirds::CreateEnemies()
 {
-	b2BodyDef bd;
-	b2FixtureDef fd;
-	b2CircleShape shape;
-	EnemyData.isEnemy = true;
 
-	bd.type = b2_dynamicBody;
-	shape.m_radius = 1;
-	fd.shape = &shape;
-	fd.friction = 0.6f;
-	fd.density = 1.0f;
+}
 
-	bd.position.Set(0, 4.0f);
-	m_EnemyPigs[0] = m_world->CreateBody(&bd);
-	m_EnemyPigs[0]->CreateFixture(&fd);
-	m_EnemyPigs[0]->SetUserData(&EnemyData);
+void AngryBirds::CreateLevel2()
+{
 
-	bd.position.Set(6.0f, 12.0f);
-	m_EnemyPigs[1] = m_world->CreateBody(&bd);
-	m_EnemyPigs[1]->CreateFixture(&fd);
-	m_EnemyPigs[1]->SetUserData(&EnemyData);
+	b2Body* prevBody = m_groundBody;
+
+	// Define crank.
+	{
+		b2PolygonShape shape;
+		shape.SetAsBox(0.5f, 2.0f);
+
+		b2BodyDef bd;
+		bd.type = b2_dynamicBody;
+		bd.position.Set(0.0f, 7.0f);
+		b2Body* body = m_world->CreateBody(&bd);
+		body->CreateFixture(&shape, 2.0f);
+		body->SetUserData(&IndestructibleData);
+
+		b2RevoluteJointDef rjd;
+		rjd.Initialize(prevBody, body, b2Vec2(0.0f, 5.0f));
+		
+		rjd.motorSpeed = 1.0f * b2_pi;
+		rjd.maxMotorTorque = 10000.0f;
+		rjd.enableMotor = true;
+		m_revJoint = (b2RevoluteJoint*)m_world->CreateJoint(&rjd);
+
+		prevBody = body;
+	}
+
+	//// Define follower.
+	{
+		b2PolygonShape shape;
+		shape.SetAsBox(4.0f, .5f);
+
+		b2BodyDef bd;
+		bd.type = b2_dynamicBody;
+		bd.position.Set(4.0f, 9.0f);
+		b2Body* body = m_world->CreateBody(&bd);
+		body->CreateFixture(&shape, 2.0f);
+		body->SetUserData(&IndestructibleData);
+
+		b2RevoluteJointDef rjd;
+		rjd.Initialize(prevBody, body, b2Vec2(0.0f, 9.0f));
+		rjd.enableMotor = false;
+		m_world->CreateJoint(&rjd);
+
+		prevBody = body;
+	}
+
+
+	// Define piston
+	{
+		b2PolygonShape shape;
+		shape.SetAsBox(1.5f, 1.5f);
+
+		b2BodyDef bd;
+		bd.type = b2_dynamicBody;
+		bd.fixedRotation = true;
+		bd.position.Set(8.0f, 9.0f);
+		b2Body* body = m_world->CreateBody(&bd);
+		body->CreateFixture(&shape, 2.0f);
+		body->SetUserData(&IndestructibleData);
+
+		b2RevoluteJointDef rjd;
+		rjd.Initialize(prevBody, body, b2Vec2(8.0f, 9.0f));
+		m_world->CreateJoint(&rjd);
+
+	}
+
+	//Define wall
+	{
+		b2PolygonShape shape;
+		shape.SetAsBox(1.5f, 10.0f);
+
+		b2BodyDef bd;
+		bd.type = b2_staticBody;
+		bd.fixedRotation = true;
+		bd.position.Set(14.0f, 15.0f);
+		b2Body* body = m_world->CreateBody(&bd);
+		body->CreateFixture(&shape, 0.0f);
+	}
+
+	//Define platform
+	{
+		b2PolygonShape shape;
+		shape.SetAsBox(6.0f, 0.5f);
+
+		b2BodyDef bd;
+		bd.type = b2_staticBody;
+		bd.fixedRotation = true;
+		bd.position.Set(2.0f, 14.0f);
+		b2Body* body = m_world->CreateBody(&bd);
+		body->CreateFixture(&shape, 2.0f);
+		body->SetUserData(&DestructibleData);
+	}
+
+	//Define boxes
+	{
+		b2PolygonShape shape;
+		shape.SetAsBox(1.0f, 1.0f);
+
+		b2BodyDef bd;
+		bd.type = b2_dynamicBody;
+		bd.position.Set(6.0f, 16.0f);
+		b2Body* body = m_world->CreateBody(&bd);
+		body->CreateFixture(&shape, 2.0f);
+		body->SetUserData(&IndestructibleData);
+
+		for (int i = 0; i < 5; i++)
+		{
+			for (int j = 0; j < 3; j++)
+			{
+				bd.position.Set(2.0f + (1.0f * i), 16.0f + (1.0f * j));
+				b2Body* body = m_world->CreateBody(&bd);
+				body->CreateFixture(&shape, 2.0f);
+				body->SetUserData(&IndestructibleData);
+			}
+		}
+	}
+
+	//Create the stack on the other side of the wall.
+	{
+		//Create a body type and position
+		b2BodyDef bd;
+		bd.type = b2_dynamicBody;
+		bd.position.Set(15.0f, 4.0f);
+
+		//Define a shape
+		b2PolygonShape shape;
+		shape.SetAsBox(4.0f, 0.5f, b2Vec2(4.0f, 0.0f), 0.5f * b2_pi);
+
+		//Give it matter
+		b2FixtureDef fd;
+		fd.shape = &shape;
+		fd.friction = 0.6f;
+		fd.density = 7.0f;
+
+		//Use the above templated to create multiple bodies in the world.
+		//Vertical slates
+		b2Body* body = m_world->CreateBody(&bd);
+		body->CreateFixture(&fd);
+		body->SetUserData(&IndestructibleData);
+
+		bd.position.Set(20.0f, 4.0f);
+		body = m_world->CreateBody(&bd);
+		body->CreateFixture(&fd);
+		body->SetUserData(&IndestructibleData);
+
+		bd.position.Set(15.0f, 13.0f);
+		body = m_world->CreateBody(&bd);
+		body->CreateFixture(&fd);
+		body->SetUserData(&DestructibleData);
+
+		bd.position.Set(20.0f, 13.0f);
+		body = m_world->CreateBody(&bd);
+		body->CreateFixture(&fd);
+		body->SetUserData(&DestructibleData);
+
+		//Horizontal slates
+		shape.SetAsBox(0.5f, 4.0f, b2Vec2(4.0f, 0.0f), 0.5f * b2_pi);
+
+		bd.position.Set(17.5f, 8.5f);
+		body = m_world->CreateBody(&bd);
+		body->CreateFixture(&fd);
+		body->SetUserData(&DestructibleData);
+
+		bd.position.Set(17.5f, 17.5f);
+		body = m_world->CreateBody(&bd);
+		body->CreateFixture(&fd);
+		body->SetUserData(&DestructibleData);
+	}
+	// Create some enemies on the stack
+	{
+		b2BodyDef bd;
+		b2FixtureDef fd;
+		b2CircleShape shape;
+
+		bd.type = b2_dynamicBody;
+		shape.m_radius = 1;
+		fd.shape = &shape;
+		fd.friction = 0.6f;
+		fd.density = 1.0f;
+
+		bd.position.Set(21.5f, 10.5f);
+		m_EnemyPigs[0] = m_world->CreateBody(&bd);
+		m_EnemyPigs[0]->CreateFixture(&fd);
+		m_EnemyPigs[0]->SetUserData(&EnemyData);
+
+		bd.position.Set(21.5f, 19.5f);
+		m_EnemyPigs[1] = m_world->CreateBody(&bd);
+		m_EnemyPigs[1]->CreateFixture(&fd);
+		m_EnemyPigs[1]->SetUserData(&EnemyData);
+	}
 }

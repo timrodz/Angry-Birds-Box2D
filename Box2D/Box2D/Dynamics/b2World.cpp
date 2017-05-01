@@ -1172,13 +1172,7 @@ void b2World::DrawDebugData()
 
 				if (Data != NULL)
 				{
-					if (Data->isEnemy)
-						DrawShape(f, xf, b2Color(1.0f, 0.f, 0.f));
-					else if (Data->isPayload)
-						DrawShape(f, xf, b2Color(1, 1, 0));
-					else if (Data->isDestroyable)
-						DrawShape(f, xf, b2Color(1.0, 0.0f, 1.0));
-					
+						DrawShape(f, xf, Data->Color);
 				}
 				else
 				{
@@ -1192,7 +1186,7 @@ void b2World::DrawDebugData()
 					}
 					else if (b->GetType() == b2_kinematicBody)
 					{
-						DrawShape(f, xf, b2Color(0.5f, 0.5f, 0.9f));
+						DrawShape(f, xf, b2Color(0.25f, 0.9f, 0.9f));
 					}
 					else if (b->IsAwake() == false)
 					{
