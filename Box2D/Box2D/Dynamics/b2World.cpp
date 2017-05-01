@@ -1151,7 +1151,7 @@ void b2World::DrawJoint(b2Joint* joint)
 	}
 }
 
-//DRAWING COMMENT
+//COMMENT
 void b2World::DrawDebugData()
 {
 	if (g_debugDraw == NULL)
@@ -1173,9 +1173,12 @@ void b2World::DrawDebugData()
 				if (Data != NULL)
 				{
 					if (Data->isEnemy)
-							DrawShape(f, xf, b2Color(1.0f, 0.f, 0.f));
+						DrawShape(f, xf, b2Color(1.0f, 0.f, 0.f));
 					else if (Data->isPayload)
-							DrawShape(f, xf, b2Color(0.9568f, 0.88f, 0.2588f));
+						DrawShape(f, xf, b2Color(1, 1, 0));
+					else if (Data->isDestroyable)
+						DrawShape(f, xf, b2Color(1.0, 0.0f, 1.0));
+					
 				}
 				else
 				{
@@ -1193,6 +1196,7 @@ void b2World::DrawDebugData()
 					}
 					else if (b->IsAwake() == false)
 					{
+						//COMMENT
 						DrawShape(f, xf, b2Color(0.6f, 0.6f, 0.6f));
 					}
 					else

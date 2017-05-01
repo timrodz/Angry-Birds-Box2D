@@ -3,7 +3,12 @@
 #include "Testbed\Framework\Test.h"
 
 
-
+enum BirdType
+{
+	NORMAL, 
+	SPLIT, 
+	HEAVY
+};
 
 class AngryBirds : public Test
 {
@@ -35,6 +40,8 @@ private:
 	b2Body* m_Slingshot;
 	//A rigidbody collidable object for drawing back and firing the payload
 	b2Body* m_Payload;
+	bool Destroyed = false;
+	bool Fired = false;
 	UserData PayloadData;
 	//The joint that keeps the payload attached to the slingshot and shows direction and tention force of the pull.
 	b2Joint* m_joint;
@@ -44,6 +51,7 @@ private:
 	b2Body* m_Destructibles[5];
 	UserData EnemyData;
 	UserData DestructibleData;
+	BirdType m_BirdType;
 
 
 	char EnemyCount[5] = { '2' };
