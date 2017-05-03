@@ -37,9 +37,9 @@ X - Incomplete
 	^ - Level 2 Piston prism joint
 	^ - Level 2 Multiple revolute joints
 ^ - Allow atleast 3 types of projectile  - Use the Keys 1, 2 and 3 to select Normal, Light and Heavy.
-	^ - Normal - Yellow - Standard density and mass. Average projectile movement. Capable of knocking things over and destroying enemy entities. 
-	^ - Heavy  - Black  - Heavier density and mass, slower projectile movement. Capable of destroying denser bodies and indestructible bodies (Feature)
-	^ - Light  - Blue   - Light density and mass, faster projectile movement. Follows a straighter line, increasing accuracy and distance (Feature)
+	^ - Normal  - Yellow - Standard density and mass. Average projectile movement. Capable of knocking things over and destroying enemy entities. 
+	^ - Heavy   - Black  - Heavier density and mass, slower projectile movement. Capable of destroying denser bodies and indestructible bodies (Feature)
+	^ - Seeking - Blue   - Light density and mass, faster projectile movement. Pressing "S" makes the bird fly towards an enemy. (Feature)
 
 
 ^ - Destructible items with physics behaviour - Color CYAN
