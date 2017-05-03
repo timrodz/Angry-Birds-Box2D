@@ -3,6 +3,7 @@
 
 int AngryBirds::Level = 0;
 
+
 AngryBirds::AngryBirds()
 {
 	Begin();
@@ -80,6 +81,32 @@ void AngryBirds::Step(Settings* settings)
 {
 	Test::Step(settings);
 
+	// Seeking Bird
+
+	if (m_BirdType == SEEK && Fired && SeekPig && CanSeek)
+	{
+		if (m_Payload != NULL)
+		{
+			m_DesiredVelocity = m_EnemyPigs[rand() % 2]->GetPosition() - m_Payload->GetPosition();
+			float32 multiplier = 4000.0f;
+			b2Vec2 force = b2Vec2(multiplier * m_DesiredVelocity.x, multiplier * m_DesiredVelocity.y);
+			m_Payload->ApplyForce(force, force, true);
+			SeekPig = false;
+			CanSeek = false;
+		}
+		
+
+			//b2Vec2 drop = b2Vec2(0.0f, -100000.0f);
+			//b2Vec2 force = m_Payload->GetLinearVelocity();
+			//force.x *= -1;
+			//force.y *= -1;
+			//b2Vec2 force2 = force + drop;
+			//m_Payload->ApplyForce(force, force, true);
+		
+	}
+
+
+
 	// We are going to destroy some bodies according to contact
 	// points. We must buffer the bodies that should be destroyed
 	// because they may belong to multiple contact points.
@@ -103,7 +130,6 @@ void AngryBirds::Step(Settings* settings)
 		float32 velocity2 = body2->GetLinearVelocity().Length();
 
 		float32 velocity = velocity1 + velocity2;
-
 
 		float check = 10.0f;
 		if (mass1 == 14.0f)
@@ -245,6 +271,13 @@ void AngryBirds::Step(Settings* settings)
 	g_debugDraw.DrawString(5, m_textLine, ammo.append(Birdsleft).c_str());
 
 	g_debugDraw.DrawString(500, 16, level.c_str());
+
+	//std::string space = "Space Pressed";
+
+	//if (SeekPig)
+	//{
+	//	g_debugDraw.DrawString(500, 16, space.c_str());
+	//}
 }
 
 void AngryBirds::Keyboard(int key)
@@ -260,12 +293,16 @@ void AngryBirds::Keyboard(int key)
 		PayloadData.Color = b2Color(1.0f, 1.0f, 0.f);
 		break;
 	case GLFW_KEY_2:
-		m_BirdType = SPLIT;
+		m_BirdType = SEEK;
 		PayloadData.Color = b2Color(0.2f, 0.2f, 1.0f);
 		break;
 	case GLFW_KEY_3:
 		m_BirdType = HEAVY;
 		PayloadData.Color = b2Color(0.f, 0.f, 0.f);
+		break;
+	case GLFW_KEY_S:
+		if (m_BirdType == SEEK)
+			SeekPig = true;		
 		break;
 	}
 }
@@ -309,9 +346,9 @@ void AngryBirds::MouseUp(const b2Vec2& p)
 			{
 			case HEAVY:
 				fd.friction = 0.5f;
-				density = 14.0f;
+				density = 20.0f;
 				break;
-			case SPLIT:
+			case SEEK:
 				density = 3.5f;
 				break;
 			case NORMAL:
@@ -324,7 +361,7 @@ void AngryBirds::MouseUp(const b2Vec2& p)
 
 			b2Vec2 force;
 			if (m_BirdType == HEAVY)
-				force = m_joint->GetReactionForce(340.0f);
+				force = m_joint->GetReactionForce(500.0f);
 			else
 				force = m_joint->GetReactionForce(150.0f);
 
@@ -371,6 +408,8 @@ void AngryBirds::MouseMove(const b2Vec2& p)
 
 void AngryBirds::CreatePayload()
 {
+	CanSeek = true;
+
 	//Define a body type and position, assign our user data, so the mouse ray-cast only picks up on the PayLoad
 	b2BodyDef bd;
 	bd.type = b2_dynamicBody;

@@ -6,7 +6,7 @@
 enum BirdType
 {
 	NORMAL, 
-	SPLIT, 
+	SEEK, 
 	HEAVY
 };
 
@@ -45,6 +45,8 @@ private:
 	b2Body* m_Payload;
 	bool Destroyed = false;
 	bool Fired = false;
+	bool SeekPig = false;
+	bool CanSeek = true;
 	float DestroyTimer = 0.0f;
 	float LevelEndTimer = 0.0f;
 	UserData PayloadData;
@@ -53,6 +55,9 @@ private:
 	//Slider Crank Joints
 	b2RevoluteJoint* m_revJoint;
 	b2PrismaticJoint* m_prismJoint;
+
+	b2Vec2 m_SteeringForce;
+	b2Vec2 m_DesiredVelocity;
 
 
 	b2Body* m_EnemyPigs[5];
