@@ -104,8 +104,15 @@ void AngryBirds::Step(Settings* settings)
 
 		float32 velocity = velocity1 + velocity2;
 
-		if (velocity > 10.0f)
-			if (mass1 > 0.0f && mass2 > 0.0f)
+
+		float check = 10.0f;
+		if (mass1 == 14.0f)
+		{
+			check = 1.0f;
+		}
+
+		if (velocity > check)
+			if (mass1 > 0.0f && mass2 > 0.0f && mass1 != mass2)
 			{
 				if (mass2 > mass1)
 				{
@@ -165,7 +172,18 @@ void AngryBirds::Step(Settings* settings)
 
 	if (m_Payload != NULL)
 	{
-		if (!m_Payload->IsAwake() && Fired)
+
+		b2Vec2 pos = m_Payload->GetPosition();
+		if(Fired)
+			if (pos.y < 0 || pos.x < -40 || pos.x > 40)
+			{	
+				m_world->DestroyBody(m_Payload);
+				m_Payload = NULL;
+				Birdsleft[0]--;
+				return;
+			}
+
+		else if (!m_Payload->IsAwake() && Fired)
 		{
 			m_world->DestroyBody(m_Payload);
 			m_Payload = NULL;
@@ -177,16 +195,6 @@ void AngryBirds::Step(Settings* settings)
 			if (DestroyTimer > 6.0f)
 			{
 				DestroyTimer = 0.0f;
-				m_world->DestroyBody(m_Payload);
-				m_Payload = NULL;
-				Birdsleft[0]--;
-			}
-		}
-		else
-		{
-			b2Vec2 pos = m_Payload->GetPosition();
-			if (pos.y < 0 || pos.x < -40 || pos.x > 40)
-			{
 				m_world->DestroyBody(m_Payload);
 				m_Payload = NULL;
 				Birdsleft[0]--;
@@ -204,14 +212,18 @@ void AngryBirds::Step(Settings* settings)
 
 	if (Birdsleft[0] <= '0')
 	{
-		Birdsleft[0] = { '3' };
-		Begin();
+
+		LevelEndTimer += 1.0f / 60.0f;
+
+		if (LevelEndTimer > 10.0f)
+		{
+			Begin();
+			LevelEndTimer = 0.0f;
+		}	
 	}
 	else if (EnemyCount[0] <= '0')
 	{
-		EnemyCount[0] = { '2' };
-
-		if (Level < 2)
+		if (Level < 1)
 			Level++;
 		else
 			Level = 0;
@@ -221,10 +233,18 @@ void AngryBirds::Step(Settings* settings)
 	
 	std::string text = "Pigs left = ";
 	std::string ammo = "Birds left = ";
+	std::string level = "";
+
+	if (Level == 0)
+		level = "Level 1";
+	else
+		level = "Level 2";
 	
 	g_debugDraw.DrawString(5, m_textLine, text.append(EnemyCount).c_str());
 	m_textLine += 16;
 	g_debugDraw.DrawString(5, m_textLine, ammo.append(Birdsleft).c_str());
+
+	g_debugDraw.DrawString(500, 16, level.c_str());
 }
 
 void AngryBirds::Keyboard(int key)
@@ -264,27 +284,29 @@ void AngryBirds::MouseUp(const b2Vec2& p)
 		m_world->DestroyJoint(m_mouseJoint);
 		m_mouseJoint = NULL;
 
-		b2BodyDef bd;
-		bd.type = b2_dynamicBody;
-		b2Vec2 pos = m_Payload->GetPosition();
-		bd.position.Set(pos.x, pos.y);
-		b2Body* Payload = m_world->CreateBody(&bd);
-		UserData* data = new UserData();
-		data->isPayload = true;
-		data->isDraggable = false;
-		data->Color = PayloadData.Color;
-		Payload->SetUserData(data);
-
-		b2PolygonShape shape;
-		shape.SetAsBox(0.75f, 0.75f);
-
-		b2FixtureDef fd;
-		fd.shape = &shape;
-		fd.friction = 0.6f;
-		
-		float density = 5.0f;
-		switch (m_BirdType)
+		if (m_Payload->GetPosition().y > 0)
 		{
+			b2BodyDef bd;
+			bd.type = b2_dynamicBody;
+			b2Vec2 pos = m_Payload->GetPosition();
+			bd.position.Set(pos.x, pos.y);
+			b2Body* Payload = m_world->CreateBody(&bd);
+			UserData* data = new UserData();
+			data->isPayload = true;
+			data->isDraggable = false;
+			data->Color = PayloadData.Color;
+			Payload->SetUserData(data);
+
+			b2PolygonShape shape;
+			shape.SetAsBox(0.75f, 0.75f);
+
+			b2FixtureDef fd;
+			fd.shape = &shape;
+			fd.friction = 0.6f;
+
+			float density = 5.0f;
+			switch (m_BirdType)
+			{
 			case HEAVY:
 				fd.friction = 0.5f;
 				density = 14.0f;
@@ -296,26 +318,36 @@ void AngryBirds::MouseUp(const b2Vec2& p)
 			default:
 				density = 5.0f;
 				break;
+			}
+			fd.density = density;
+			Payload->CreateFixture(&fd);
+
+			b2Vec2 force;
+			if (m_BirdType == HEAVY)
+				force = m_joint->GetReactionForce(340.0f);
+			else
+				force = m_joint->GetReactionForce(150.0f);
+
+			Payload->ApplyForce(force, force, true);
+
+			m_world->DestroyJoint(m_joint);
+			m_world->DestroyBody(m_Payload);
+			m_Payload = NULL;
+			m_joint = NULL;
+
+			m_Payload = Payload;
+
+			Fired = true;
 		}
-		fd.density = density;
-		Payload->CreateFixture(&fd);
-
-		b2Vec2 force;
-		if(m_BirdType == HEAVY)
-			force = m_joint->GetReactionForce(340.0f);
 		else
-			force = m_joint->GetReactionForce(150.0f);
+		{
 
-		Payload->ApplyForce(force, force, true);
-
-		m_world->DestroyJoint(m_joint);
-		m_world->DestroyBody(m_Payload);
-		m_Payload = NULL;
-		m_joint = NULL;
-
-		m_Payload = Payload;
-
-		Fired = true;
+			m_world->DestroyJoint(m_joint);
+			m_world->DestroyBody(m_Payload);
+			m_Payload = NULL;
+			m_joint = NULL;
+			CreatePayload();
+		}
 	}
 
 	m_mouseFirstClick = b2Vec2(p);

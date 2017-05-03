@@ -46,6 +46,7 @@ private:
 	bool Destroyed = false;
 	bool Fired = false;
 	float DestroyTimer = 0.0f;
+	float LevelEndTimer = 0.0f;
 	UserData PayloadData;
 	//The joint that keeps the payload attached to the slingshot and shows direction and tention force of the pull.
 	b2Joint* m_joint;
