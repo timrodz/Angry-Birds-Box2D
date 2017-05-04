@@ -48,7 +48,8 @@ private:
 	bool SeekPig = false;
 	bool CanSeek = true;
 	float DestroyTimer = 0.0f;
-	float LevelEndTimer = 0.0f;
+	float LevelEndBirdTimer = 0.0f;
+	float LevelEndEnemyTimer = 0.0f;
 	UserData PayloadData;
 	//The joint that keeps the payload attached to the slingshot and shows direction and tention force of the pull.
 	b2Joint* m_joint;

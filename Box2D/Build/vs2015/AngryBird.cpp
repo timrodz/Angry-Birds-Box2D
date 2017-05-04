@@ -239,27 +239,40 @@ void AngryBirds::Step(Settings* settings)
 	if (Birdsleft[0] <= '0')
 	{
 
-		LevelEndTimer += 1.0f / 60.0f;
+		LevelEndBirdTimer += 1.0f / 60.0f;
 
-		if (LevelEndTimer > 10.0f)
+		if (LevelEndBirdTimer > 4.0f)
 		{
 			Begin();
-			LevelEndTimer = 0.0f;
+			LevelEndBirdTimer = 0.0f;
 		}	
 	}
 	else if (EnemyCount[0] <= '0')
 	{
-		if (Level < 1)
-			Level++;
-		else
-			Level = 0;
-		Begin();
+		LevelEndEnemyTimer += 1.0f / 60.0f;
+
+		if (LevelEndEnemyTimer > 1.5f)
+		{
+			if (Level < 1)
+				Level++;
+			else
+				Level = 0;
+
+			Begin();
+			LevelEndEnemyTimer = 0.0f;
+		}	
 	}
 	
 	
 	std::string text = "Pigs left = ";
 	std::string ammo = "Birds left = ";
 	std::string level = "";
+	std::string reset = "Press 'R' to Reset Level";
+	std::string click = "Click and drag to aim bird, release to fire";
+	std::string bird1 = "Press '1' for Standard Bird";
+	std::string bird2 = "Press '2' for Seeking Bird";
+	std::string bird3 = "Press '3' for Heavy Bird";
+	std::string seek = "Press 'S' to Seek Enemy (only with Seeking Bird)";
 
 	if (Level == 0)
 		level = "Level 1";
@@ -269,6 +282,22 @@ void AngryBirds::Step(Settings* settings)
 	g_debugDraw.DrawString(5, m_textLine, text.append(EnemyCount).c_str());
 	m_textLine += 16;
 	g_debugDraw.DrawString(5, m_textLine, ammo.append(Birdsleft).c_str());
+
+	m_textLine += 32;
+	g_debugDraw.DrawString(5, m_textLine, click.c_str());
+	m_textLine += 24;
+
+	g_debugDraw.DrawString(5, m_textLine, bird1.c_str());
+	m_textLine += 16;
+	g_debugDraw.DrawString(5, m_textLine, bird2.c_str());
+	m_textLine += 16;
+	g_debugDraw.DrawString(5, m_textLine, bird3.c_str());
+	m_textLine += 24;
+
+	g_debugDraw.DrawString(5, m_textLine, seek.c_str());
+	m_textLine += 32;
+
+	g_debugDraw.DrawString(5, m_textLine, reset.c_str());
 
 	g_debugDraw.DrawString(500, 16, level.c_str());
 
@@ -456,9 +485,7 @@ void AngryBirds::CreatePayload()
 
 void AngryBirds::CreateLevel1()
 {
-
 	{
-
 		//Create a body type and position
 		b2BodyDef bd;
 		bd.type = b2_dynamicBody;
