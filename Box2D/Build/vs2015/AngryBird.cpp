@@ -508,22 +508,22 @@ void AngryBirds::CreatePayload()
 // Creates level 1
 void AngryBirds::CreateLevel1()
 {
-	{
+	
 		//Create a body type and position
 		b2BodyDef bd;
 		bd.type = b2_dynamicBody;
 		bd.position.Set(0, 4.0f);
-		
+
 		//Define a shape
 		b2PolygonShape shape;
 		shape.SetAsBox(4.0f, 0.5f, b2Vec2(4.0f, 0.0f), 0.5f * b2_pi);
-		
+
 		//Give it matter
 		b2FixtureDef fd;
 		fd.shape = &shape;
 		fd.friction = 0.6f;
 		fd.density = 7.0f;
-		
+
 		//Use the above templated to create multiple bodies in the world.
 		b2Body* body = m_world->CreateBody(&bd);
 		body->CreateFixture(&fd);
@@ -549,7 +549,62 @@ void AngryBirds::CreateLevel1()
 		body = m_world->CreateBody(&bd);
 		body->CreateFixture(&fd);
 		body->SetUserData(&DestructibleData);
-	}
+
+		// Create pulley
+		
+		b2PulleyJoint* m_joint1;
+
+		float32 y = 16.0f;
+		float32 L = 5.0f;
+		float32 a = 1.0f;
+		float32 b = 2.0f;
+
+		b2Body* ground = NULL;
+		{
+			b2BodyDef bd;
+			ground = m_world->CreateBody(&bd);
+
+			b2EdgeShape edge;
+			edge.Set(b2Vec2(-40.0f, 0.0f), b2Vec2(40.0f, 0.0f));
+			//ground->CreateFixture(&shape, 0.0f);
+
+			b2CircleShape circle;
+			circle.m_radius = 2.0f;
+
+			circle.m_p.Set(-10.0f, y + b + L);
+			ground->CreateFixture(&circle, 0.0f);
+
+			circle.m_p.Set(10.0f, y + b + L);
+			ground->CreateFixture(&circle, 0.0f);
+		}
+
+		{
+
+			b2PolygonShape shape;
+			shape.SetAsBox(a, b);
+
+			b2BodyDef bd;
+			bd.type = b2_dynamicBody;
+
+			//bd.fixedRotation = true;
+			bd.position.Set(-10.0f, y);
+			b2Body* body1 = m_world->CreateBody(&bd);
+			body1->CreateFixture(&shape, 5.0f);
+
+			bd.position.Set(10.0f, y);
+			b2Body* body2 = m_world->CreateBody(&bd);
+			body2->CreateFixture(&shape, 5.0f);
+
+			b2PulleyJointDef pulleyDef;
+			b2Vec2 anchor1(-10.0f, y + b);
+			b2Vec2 anchor2(10.0f, y + b);
+			b2Vec2 groundAnchor1(-10.0f, y + b + L);
+			b2Vec2 groundAnchor2(10.0f, y + b + L);
+			pulleyDef.Initialize(body1, body2, groundAnchor1, groundAnchor2, anchor1, anchor2, 1.5f);
+
+			m_joint1 = (b2PulleyJoint*)m_world->CreateJoint(&pulleyDef);
+		}
+			
 	//Create enemies
 	{
 		b2BodyDef bd;
@@ -572,6 +627,7 @@ void AngryBirds::CreateLevel1()
 		m_EnemyPigs[1]->CreateFixture(&fd);
 		m_EnemyPigs[1]->SetUserData(&EnemyData);
 	}
+	
 }
 
 void AngryBirds::CreateEnemies()
