@@ -1,3 +1,18 @@
+//
+// Bachelor of Software Engineering
+// Media Design School
+// Auckland
+// New Zealand
+//
+// (c) 2005 - 2017 Media Design School
+//
+// File Name : AngryBird.h
+// Description : Game header file 
+// Authors: Cameron Peet & Mitchell Currie
+// Mail : Cameron.Peet@mediadesignschool.com
+//		  Mitchell.Currie@mediadesignschool.com
+//
+
 #pragma once
 
 #include "Testbed\Framework\Test.h"
