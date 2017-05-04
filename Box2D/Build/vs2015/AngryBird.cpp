@@ -77,20 +77,21 @@ void AngryBirds::Begin()
 	}
 	CreatePayload();
 }
+
+// Update function, called every frame
 void AngryBirds::Step(Settings* settings)
 {
 	Test::Step(settings);
 
 	// Seeking Bird
-
 	if (m_BirdType == SEEK && Fired && SeekPig && CanSeek)
 	{
 		if (m_Payload != NULL)
-		{
-			m_DesiredVelocity = m_EnemyPigs[rand() % 2]->GetPosition() - m_Payload->GetPosition();
+		{	
+			m_DesiredVelocity = m_EnemyPigs[rand() % 2]->GetPosition() - m_Payload->GetPosition(); // Desired velocity to hit enemy bird
 			float32 multiplier = 4000.0f;
-			b2Vec2 force = b2Vec2(multiplier * m_DesiredVelocity.x, multiplier * m_DesiredVelocity.y);
-			m_Payload->ApplyForce(force, force, true);
+			b2Vec2 force = b2Vec2(multiplier * m_DesiredVelocity.x, multiplier * m_DesiredVelocity.y);  // calculate force
+			m_Payload->ApplyForce(force, force, true);  // apply the force
 			SeekPig = false;
 			CanSeek = false;
 		}
@@ -195,10 +196,10 @@ void AngryBirds::Step(Settings* settings)
 	}
 
 
-
+	// If bird is not destroyed
 	if (m_Payload != NULL)
 	{
-
+		// Destroy bird if it goes off the screen
 		b2Vec2 pos = m_Payload->GetPosition();
 		if(Fired)
 			if (pos.y < 0 || pos.x < -40 || pos.x > 40)
@@ -209,12 +210,15 @@ void AngryBirds::Step(Settings* settings)
 				return;
 			}
 
+		// Destroy bird if it stops moving (not awake)
 		else if (!m_Payload->IsAwake() && Fired)
 		{
 			m_world->DestroyBody(m_Payload);
 			m_Payload = NULL;
 			Birdsleft[0]--;
 		}
+
+		// Destroy bird after 6 seconds, if not already destroyed
 		else if (m_Payload->IsAwake() && Fired)
 		{
 			DestroyTimer += 1.0f / 60.0f;
@@ -228,29 +232,35 @@ void AngryBirds::Step(Settings* settings)
 		}
 	}
 
+	// If bird is destroyed
 	if (m_Payload == NULL)
 	{
+		// Move onto next bird, if available
 		if (Birdsleft[0] > '0')
 		{
 			CreatePayload();
 		}
 	}
 
+	// If no birds left
 	if (Birdsleft[0] <= '0')
 	{
-
 		LevelEndBirdTimer += 1.0f / 60.0f;
 
+		// Reset the level after 4 seconds
 		if (LevelEndBirdTimer > 4.0f)
 		{
 			Begin();
 			LevelEndBirdTimer = 0.0f;
 		}	
 	}
+
+	// If no enemies left
 	else if (EnemyCount[0] <= '0')
 	{
 		LevelEndEnemyTimer += 1.0f / 60.0f;
 
+		// Move to next level after 1.5 seconds
 		if (LevelEndEnemyTimer > 1.5f)
 		{
 			if (Level < 1)
@@ -263,7 +273,7 @@ void AngryBirds::Step(Settings* settings)
 		}	
 	}
 	
-	
+	// Create strings for text
 	std::string text = "Pigs left = ";
 	std::string ammo = "Birds left = ";
 	std::string level = "";
@@ -279,6 +289,7 @@ void AngryBirds::Step(Settings* settings)
 	else
 		level = "Level 2";
 	
+	// Draw text to screen
 	g_debugDraw.DrawString(5, m_textLine, text.append(EnemyCount).c_str());
 	m_textLine += 16;
 	g_debugDraw.DrawString(5, m_textLine, ammo.append(Birdsleft).c_str());
@@ -301,14 +312,9 @@ void AngryBirds::Step(Settings* settings)
 
 	g_debugDraw.DrawString(500, 16, level.c_str());
 
-	//std::string space = "Space Pressed";
-
-	//if (SeekPig)
-	//{
-	//	g_debugDraw.DrawString(500, 16, space.c_str());
-	//}
 }
 
+// Keyboard input
 void AngryBirds::Keyboard(int key)
 {
 	switch (key)
@@ -435,6 +441,7 @@ void AngryBirds::MouseMove(const b2Vec2& p)
 	}
 }
 
+// Creates the bird that will be fired
 void AngryBirds::CreatePayload()
 {
 	CanSeek = true;
@@ -483,6 +490,7 @@ void AngryBirds::CreatePayload()
 	Fired = false;
 }
 
+// Creates level 1
 void AngryBirds::CreateLevel1()
 {
 	{
@@ -556,6 +564,7 @@ void AngryBirds::CreateEnemies()
 
 }
 
+// Creates level 2
 void AngryBirds::CreateLevel2()
 {
 
