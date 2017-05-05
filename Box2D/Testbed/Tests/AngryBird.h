@@ -8,11 +8,11 @@
 //
 // File Name : AngryBird.h
 // Description : Game header file 
-// Authors: Cameron Peet & Mitchell Currie
+// Authors: Cameron Peet & Mitchell Currie & Juan Rodriguez
 // Mail : Cameron.Peet@mediadesignschool.com
 //		  Mitchell.Currie@mediadesignschool.com
+//		  Juan.Rodriguez@mediadesignschool.com
 //
-
 #pragma once
 
 #include "Testbed\Framework\Test.h"

@@ -8,9 +8,10 @@
 //
 // File Name : AngryBird.cpp
 // Description : Game implementation file 
-// Authors: Cameron Peet & Mitchell Currie
+// Authors: Cameron Peet & Mitchell Currie & Juan Rodriguez
 // Mail : Cameron.Peet@mediadesignschool.com
 //		  Mitchell.Currie@mediadesignschool.com
+//		  Juan.Rodriguez@mediadesignschool.com
 //
 
 #include "Testbed\Tests\AngryBird.h"
